@@ -1,22 +1,28 @@
+/* Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V5
+ * Genre: editorial · Macrostructure: Ledger Register · Theme: Newsprint-light
+ * (paper light · high-contrast serif · warm seal-red accent)
+ * Nav: N1a minimal (3 anchors — page genuinely has 3 destinations)
+ * Enrichment: none — typography only.
+ * Inference: audience = Hindi-speaking student fresher · use = daily ticking +
+ * carry-over · tone = editorial/record-book. Redirect any field to change course.
+ * audience/use/tone: student-tracker · daily-tick · editorial
+ */
 @import "tailwindcss";
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@theme {
+  --color-paper: #f6f1e7;
+  --color-parchment: #ece3cd;
+  --color-ink: #1c1710;
+  --color-inksoft: #5d5546;
+  --color-seal: #b3351f;
+  --color-sealdeep: #8c2817;
+  --color-leaf: #2f6b3a;
+  --color-rule: #d9cdb2;
 }
 
-:root {
-  --background: #060a17;
-  --foreground: #f4f1ea;
-  --gold: #f5b942;
-  --gold-soft: #ffd97a;
-  --violet: #8b5cf6;
-  --emerald: #10d9a0;
-  --rose: #fb7185;
-  --card: rgba(255, 255, 255, 0.045);
-  --card-border: rgba(255, 255, 255, 0.09);
+html,
+body {
+  overflow-x: clip;
 }
 
 html {
@@ -24,55 +30,166 @@ html {
 }
 
 body {
-  background:
-    radial-gradient(1100px 500px at 15% -5%, rgba(139, 92, 246, 0.22), transparent 60%),
-    radial-gradient(900px 480px at 90% 0%, rgba(245, 185, 66, 0.16), transparent 55%),
-    radial-gradient(700px 500px at 50% 110%, rgba(16, 217, 160, 0.1), transparent 60%),
-    var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  background-color: var(--color-paper);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 31px,
+    rgba(28, 23, 16, 0.045) 31px,
+    rgba(28, 23, 16, 0.045) 32px
+  );
+  color: var(--color-ink);
+  font-family: var(--font-body), system-ui, sans-serif;
   min-height: 100vh;
 }
 
-.bg-grid {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: radial-gradient(ellipse 90% 65% at 50% 0%, black 55%, transparent 100%);
+.font-display {
+  font-family: var(--font-display), Georgia, serif;
+  font-style: normal;
 }
 
-.glass {
-  background: var(--card);
-  border: 1px solid var(--card-border);
-  backdrop-filter: blur(14px);
+.font-ledger {
+  font-family: var(--font-ledger), ui-monospace, monospace;
 }
 
-.gold-text {
-  background: linear-gradient(100deg, #fff6dd 10%, var(--gold-soft) 35%, var(--gold) 60%, #ff9d5c 90%);
-  -webkit-background-clip: text;
-  background-clip: text;
+/* Double newspaper rule */
+.rule-double {
+  border-top: 3px solid var(--color-ink);
+  position: relative;
+}
+.rule-double::after {
+  content: "";
+  display: block;
+  border-top: 1px solid var(--color-ink);
+  margin-top: 2px;
+}
+
+.rule-single {
+  border-top: 1px solid var(--color-rule);
+}
+
+/* Rotated rubber stamp */
+.stamp {
+  display: inline-block;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  padding: 1px 8px;
+  font-family: var(--font-ledger), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transform: rotate(-3deg);
+  white-space: nowrap;
+}
+
+.stamp-seal {
+  color: var(--color-seal);
+  background: rgba(179, 53, 31, 0.07);
+}
+
+.stamp-leaf {
+  color: var(--color-leaf);
+  background: rgba(47, 107, 58, 0.08);
+}
+
+.stamp-ink {
+  color: var(--color-ink);
+  background: transparent;
+}
+
+/* Mohar checkbox */
+.mohar {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 9999px;
+  border: 2px solid var(--color-ink);
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
   color: transparent;
+  transition: transform 0.12s ease-out, background-color 0.15s ease, color 0.15s ease;
+}
+.mohar:hover {
+  background: rgba(28, 23, 16, 0.07);
+}
+.mohar:focus-visible {
+  outline: 3px solid var(--color-seal);
+  outline-offset: 2px;
+}
+.mohar:active {
+  transform: scale(0.86);
+}
+.mohar[data-done="true"] {
+  background: var(--color-leaf);
+  border-color: var(--color-leaf);
+  color: #f6f1e7;
+}
+.mohar[data-late="true"] {
+  border-color: var(--color-seal);
+}
+.mohar[data-late="true"]:hover {
+  background: rgba(179, 53, 31, 0.1);
 }
 
-.gold-border {
-  border: 1px solid rgba(245, 185, 66, 0.35);
-  box-shadow: 0 0 0 1px rgba(245, 185, 66, 0.12), 0 18px 50px -20px rgba(245, 185, 66, 0.35);
+@keyframes mohar-thap {
+  0% { transform: scale(1.35) rotate(-10deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+.mohar[data-done="true"] {
+  animation: mohar-thap 0.18s ease-out;
 }
 
-.checkbox-tick {
-  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+@keyframes row-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-.checkbox-tick:active {
-  transform: scale(0.9);
+.row-in {
+  animation: row-in 0.4s ease-out both;
 }
 
-.task-card {
-  transition: transform 0.18s ease, border-color 0.2s ease, background 0.2s ease;
+@media (prefers-reduced-motion: reduce) {
+  .row-in,
+  .mohar[data-done="true"] {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
 }
-.task-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(245, 185, 66, 0.4);
+
+.ledger-row {
+  border-top: 1px solid var(--color-rule);
+  transition: background-color 0.15s ease;
+}
+.ledger-row:hover {
+  background-color: rgba(28, 23, 16, 0.035);
+}
+.ledger-row:last-child {
+  border-bottom: 1px solid var(--color-rule);
+}
+
+/* Ruler progress track with tick marks */
+.ruler {
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--color-ink) 0,
+    var(--color-ink) 1px,
+    transparent 1px,
+    transparent 10%
+  );
+  background-size: 100% 8px;
+  background-repeat: no-repeat;
+  background-position: bottom;
+  padding-bottom: 12px;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -84,5 +201,10 @@ body {
 }
 
 ::selection {
-  background: rgba(245, 185, 66, 0.4);
+  background: var(--color-seal);
+  color: var(--color-paper);
+}
+
+input[type="date"] {
+  color-scheme: light;
 }

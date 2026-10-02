@@ -23,12 +23,15 @@ function parseISODate(s: string): Date {
   return new Date(y, m - 1, d);
 }
 
-const PHASES: ("All" | Phase)[] = ["All", "Python + SQL", "Backend Core", "Cloud + Job Ready"];
+function serial(day: number): string {
+  return `No. ${String(day).padStart(2, "0")}`;
+}
 
-const PHASE_COLOR: Record<Phase, string> = {
-  "Python + SQL": "text-sky-300 border-sky-400/30 bg-sky-400/10",
-  "Backend Core": "text-violet-300 border-violet-400/30 bg-violet-400/10",
-  "Cloud + Job Ready": "text-emerald-300 border-emerald-400/30 bg-emerald-400/10",
+const PHASES: ("All" | Phase)[] = ["All", "Python + SQL", "Backend Core", "Cloud + Job Ready"];
+const CHAPTER: Record<Phase, string> = {
+  "Python + SQL": "I",
+  "Backend Core": "II",
+  "Cloud + Job Ready": "III",
 };
 
 export default function Home() {
@@ -73,30 +76,15 @@ export default function Home() {
   const doneCount = enriched.filter((t) => t.done).length;
   const pct = Math.round((doneCount / TASKS.length) * 100);
   const overdue = enriched.filter((t) => t.isOverdue).sort((a, b) => a.day - b.day);
-  const todayTasks = enriched.filter((t) => t.isToday);
-  const focus = [...overdue, ...todayTasks.filter((t) => !t.done)];
+  const focus = [...overdue, ...enriched.filter((t) => t.isToday && !t.done)];
 
-  const streak = useMemo(() => {
-    let s = 0;
-    const sorted = [...enriched].sort((a, b) => a.day - b.day);
-    for (const t of sorted) {
-      if (t.date > viewDate) break;
-      if (t.done) s += 1;
-      else if (t.date < viewDate) {
-        // missed day breaks streak only if it was scheduled before view date
-        // keep counting only consecutive done from start
-        continue;
-      }
-    }
-    // simpler streak: consecutive done days ending at latest done
-    let consec = 0;
-    for (let i = sorted.length - 1; i >= 0; i--) {
-      const t = sorted[i];
-      if (t.date > viewDate) continue;
-      if (t.done) consec += 1;
+  const currentDayNo = useMemo(() => {
+    let n = 0;
+    for (const t of enriched) {
+      if (t.date <= viewDate) n = t.day;
       else break;
     }
-    return { total: s, consec };
+    return n;
   }, [enriched, viewDate]);
 
   const filtered = useMemo(() => {
@@ -126,7 +114,7 @@ export default function Home() {
   }
 
   function resetAll() {
-    if (confirm("Reset all 90 days progress?")) setCompleted({});
+    if (confirm("Saara hisaab mita dein? 90 din zero se shuru honge.")) setCompleted({});
   }
 
   const startDate = dateForDay(1);
@@ -134,290 +122,305 @@ export default function Home() {
   const daysToStart = Math.round((startOfDay(startDate).getTime() - todayReal.getTime()) / 86400000);
 
   return (
-    <div className="relative min-h-screen">
-      <div className="bg-grid pointer-events-none absolute inset-0" />
-      <div className="relative mx-auto w-full max-w-6xl px-5 pb-24 pt-6 sm:px-8">
-        {/* NAV */}
-        <nav className="flex items-center justify-between py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-orange-500 text-xl font-black text-black shadow-lg shadow-orange-500/30">
-              ⌁
-            </div>
-            <div>
-              <p className="text-sm font-bold tracking-wide">BACKEND + CLOUD</p>
-              <p className="text-xs text-white/50">90-day tracker • Option A</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="glass rounded-full px-3 py-1.5 font-semibold text-amber-200">
-              FastAPI + Postgres
-            </span>
-            <span className="glass hidden rounded-full px-3 py-1.5 text-white/60 sm:inline">
-              Starts {formatDate(startDate)}
-            </span>
-          </div>
+    <div className="mx-auto w-full max-w-5xl px-5 pb-20 sm:px-8">
+      {/* Dateline bar */}
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--color-ink)] py-2 font-ledger text-[11px] tracking-[0.14em] uppercase">
+        <span>Vol. 1 · Nabbe din ka hisaab</span>
+        <nav className="hidden items-center gap-4 sm:flex" aria-label="Sections">
+          <a href="#panna" className="underline-offset-4 hover:underline">Aaj ka panna</a>
+          <a href="#naksha" className="underline-offset-4 hover:underline">Naksha</a>
+          <a href="#adhyay" className="underline-offset-4 hover:underline">Adhyay</a>
         </nav>
+        <span className="hidden md:inline">4 Oct 2026 → 1 Jan 2027</span>
+      </div>
 
-        {/* HERO */}
-        <header className="mt-6 text-center sm:mt-10">
-          <p className="mx-auto inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-4 py-1.5 text-xs font-semibold tracking-widest text-amber-200 uppercase">
-            ✦ Starts 4 Oct 2026 • auto carry-over on
-          </p>
-          <h1 className="mx-auto mt-5 max-w-3xl text-4xl leading-[1.05] font-black tracking-tight sm:text-6xl">
-            <span className="gold-text">Backend + Cloud</span>
-            <br />
-            <span className="text-white">in 90 days.</span>
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-white/60 sm:text-base">
-            Tick a topic when done. <span className="text-amber-200 font-semibold">Missed topics automatically carry to the next day</span> and
-            sit in your Today Focus until you finish them. Progress saves in your browser.
-          </p>
+      {/* Masthead */}
+      <header className="pt-8 sm:pt-12">
+        <p className="inline-block border border-[var(--color-ink)] px-3 py-1 font-ledger text-[11px] font-bold tracking-[0.18em] uppercase">
+          Backend + Cloud · Option A · FastAPI + Postgres
+        </p>
+        <h1 className="font-display mt-5 max-w-3xl text-5xl leading-[0.95] font-black tracking-tight text-balance sm:text-7xl">
+          Nabbe din,
+          <br />
+          ek register.
+        </h1>
+        <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-[var(--color-inksoft)] sm:text-base">
+          Roz ka kaam karo, mohar lagao. Jo chhoot jaye woh udhaar ki tarah agle din
+          khud aa jayega — jab tak poora na ho, peecha nahi chhodega.
+        </p>
 
-          {/* STATS */}
-          <div className="mx-auto mt-8 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="glass rounded-2xl p-4">
-              <p className="text-2xl font-black text-white">{pct}%</p>
-              <p className="text-xs text-white/50">{doneCount}/90 done</p>
+        {/* Progress ledger */}
+        <div className="rule-double mt-8 pt-5">
+          <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+            <div className="flex items-baseline gap-3">
+              <span className="font-display text-6xl font-black tabular-nums sm:text-7xl">
+                {doneCount}
+              </span>
+              <span className="font-display text-2xl font-bold text-[var(--color-inksoft)] tabular-nums">
+                / 90
+              </span>
             </div>
-            <div className="glass rounded-2xl p-4">
-              <p className="text-2xl font-black text-amber-300">{overdue.length}</p>
-              <p className="text-xs text-white/50">carried over</p>
-            </div>
-            <div className="glass rounded-2xl p-4">
-              <p className="text-2xl font-black text-emerald-300">{streak.consec}</p>
-              <p className="text-xs text-white/50">day streak</p>
-            </div>
-            <div className="glass rounded-2xl p-4">
-              <p className="text-2xl font-black text-violet-300">{90 - doneCount}</p>
-              <p className="text-xs text-white/50">to go</p>
-            </div>
-          </div>
-
-          <div className="mx-auto mt-4 max-w-3xl">
-            <div className="h-3 overflow-hidden rounded-full border border-white/10 bg-white/5">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-amber-200 via-amber-400 to-orange-500 transition-all duration-500"
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-            <div className="mt-2 flex items-center justify-between text-xs text-white/45">
-              <span>{formatDate(startDate)} → {formatDate(endDate)}</span>
-              {daysToStart > 0 ? (
-                <span className="font-semibold text-amber-200">Starts in {daysToStart} day{daysToStart === 1 ? "" : "s"}</span>
-              ) : (
-                <span>Keep the chain going 🔥</span>
-              )}
-            </div>
-          </div>
-        </header>
-
-        {/* TODAY FOCUS */}
-        <section className="gold-border mt-10 rounded-3xl bg-gradient-to-b from-amber-300/[0.08] to-transparent p-5 sm:p-7">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-black text-white sm:text-2xl">◉ Today Focus</h2>
-              <p className="mt-1 text-sm text-white/55">
-                Viewing <span className="font-bold text-white">{formatDate(viewDate)} ({formatDayLabel(viewDate)})</span>
-                {" • "}missed topics carried here automatically
+            <div className="pb-2 text-right font-ledger text-xs tracking-[0.14em] uppercase">
+              <p>Day {currentDayNo} of 90 · {pct}% poora</p>
+              <p className="mt-1 text-[var(--color-seal)]">
+                {overdue.length === 0 ? "koi udhaar nahi" : `${overdue.length} udhaar baaki`}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={viewDateISO}
-                onChange={(e) => e.target.value && setViewDateISO(e.target.value)}
-                className="rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-white outline-none focus:border-amber-300/60"
-              />
-              <button
-                onClick={() => setViewDateISO(toISODate(new Date()))}
-                className="rounded-xl bg-white/10 px-3 py-2 text-sm font-bold text-white hover:bg-white/20"
-              >
-                Today
-              </button>
-            </div>
           </div>
+          <div className="ruler mt-3" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Progress">
+            <div
+              className="h-[10px] bg-[var(--color-ink)] transition-all duration-500"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <div className="mt-1 flex items-center justify-between font-ledger text-[11px] text-[var(--color-inksoft)]">
+            <span>{formatDate(startDate)}</span>
+            {daysToStart > 0 ? (
+              <span className="font-bold text-[var(--color-seal)]">
+                Shuru hone me {daysToStart} din
+              </span>
+            ) : (
+              <span>Roz mohar lagao, silsila na todo</span>
+            )}
+            <span>{formatDate(endDate)}</span>
+          </div>
+        </div>
+      </header>
 
-          {focus.length === 0 ? (
-            <div className="mt-5 rounded-2xl border border-emerald-300/25 bg-emerald-300/10 p-5 text-center">
-              <p className="text-lg font-black text-emerald-200">All clear ✨</p>
-              <p className="mt-1 text-sm text-emerald-100/70">Nothing carried over and nothing scheduled. You are ahead — revise or rest.</p>
-            </div>
-          ) : (
-            <div className="mt-5 grid gap-3">
-              {focus.map((t) => (
-                <div
-                  key={t.day}
-                  className="task-card glass flex items-start gap-4 rounded-2xl p-4"
-                >
-                  <button
-                    onClick={() => toggle(t.day)}
-                    aria-label={`tick day ${t.day}`}
-                    className={`checkbox-tick mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 font-black ${
-                      t.done
-                        ? "border-emerald-300 bg-emerald-300 text-black"
-                        : t.isOverdue
-                          ? "border-rose-300/70 bg-rose-400/10 text-rose-200"
-                          : "border-amber-300/70 bg-amber-300/10 text-amber-200"
-                    }`}
-                  >
-                    {t.done ? "✓" : ""}
-                  </button>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-black tracking-wider text-white/70">
-                        DAY {t.day} • {formatDate(t.date)}
-                      </span>
-                      {t.isOverdue && (
-                        <span className="rounded-full border border-rose-300/40 bg-rose-400/15 px-2.5 py-0.5 text-[11px] font-black text-rose-200">
-                          ⏳ carried +{t.diffDays}d — finish me first
-                        </span>
-                      )}
-                      {t.isToday && !t.isOverdue && (
-                        <span className="rounded-full border border-amber-300/40 bg-amber-300/15 px-2.5 py-0.5 text-[11px] font-black text-amber-200">
-                          ● scheduled today
-                        </span>
-                      )}
-                    </div>
-                    <p className={`mt-1.5 font-bold text-white ${t.done ? "line-through opacity-50" : ""}`}>
-                      {t.title}
-                    </p>
-                    <p className="mt-0.5 text-sm text-white/55">{t.detail}</p>
+      {/* Aaj ka panna */}
+      <section id="panna" className="mt-10 scroll-mt-6 border-2 border-[var(--color-ink)] bg-[var(--color-parchment)] p-5 sm:p-7">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="font-ledger text-[11px] font-bold tracking-[0.2em] uppercase text-[var(--color-seal)]">
+              Aaj ka panna · Today&apos;s page
+            </p>
+            <h2 className="font-display mt-2 text-3xl font-black sm:text-4xl">
+              {formatDate(viewDate)} <span className="text-[var(--color-inksoft)]">({formatDayLabel(viewDate)})</span>
+            </h2>
+            <p className="mt-2 max-w-lg text-sm leading-relaxed text-[var(--color-inksoft)]">
+              Neeche wahi kaam hain jo aaj ke hain ya pichhle dino se udhaar chale aa rahe hain.
+              Pehle udhaar niptao.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={viewDateISO}
+              onChange={(e) => e.target.value && setViewDateISO(e.target.value)}
+              aria-label="Dekhne ki tareekh"
+              className="border border-[var(--color-ink)] bg-[var(--color-paper)] px-3 py-2 font-ledger text-sm outline-none focus:border-[var(--color-seal)]"
+            />
+            <button
+              onClick={() => setViewDateISO(toISODate(new Date()))}
+              className="border border-[var(--color-ink)] bg-[var(--color-ink)] px-3 py-2 text-sm font-bold text-[var(--color-paper)] hover:bg-[var(--color-sealdeep)] hover:border-[var(--color-sealdeep)]"
+            >
+              Aaj
+            </button>
+          </div>
+        </div>
+
+        {focus.length === 0 ? (
+          <div className="mt-6 border border-dashed border-[var(--color-inksoft)] p-6 text-center">
+            <p className="font-display text-2xl font-black">Sab clear.</p>
+            <p className="mx-auto mt-1 max-w-md text-sm text-[var(--color-inksoft)]">
+              Aaj koi udhaar nahi. Kal ka panna dekh lo, ya revise karke aaram karo.
+            </p>
+          </div>
+        ) : (
+          <ol className="mt-6">
+            {focus.map((t, i) => (
+              <li key={t.day} className="ledger-row row-in flex items-start gap-3 py-4 sm:gap-4" style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
+                <input
+                  type="checkbox"
+                  checked={t.done}
+                  onChange={() => toggle(t.day)}
+                  aria-label={`Day ${t.day} poora hua`}
+                  data-done={t.done}
+                  data-late={t.isOverdue && !t.done}
+                  className="mohar mt-0.5"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="font-ledger text-xs font-bold">{serial(t.day)}</span>
+                    {t.isOverdue ? (
+                      <span className="stamp stamp-seal">Udhaar +{t.diffDays} din</span>
+                    ) : (
+                      <span className="stamp stamp-ink">Aaj ka</span>
+                    )}
                   </div>
+                  <p className={`font-display mt-1 text-lg leading-snug font-bold ${t.done ? "line-through opacity-50" : ""}`}>
+                    {t.title}
+                  </p>
+                  <p className="mt-0.5 text-sm leading-relaxed text-[var(--color-inksoft)]">{t.detail}</p>
                 </div>
-              ))}
-            </div>
-          )}
-        </section>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
 
-        {/* CONTROLS */}
-        <section className="mt-8 flex flex-col gap-3">
-          <div className="flex flex-col gap-3 sm:flex-row">
+      {/* Controls */}
+      <div className="mt-8 flex flex-col gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <label className="flex-1 border-b-2 border-[var(--color-ink)] pb-1">
+            <span className="sr-only">Vishay dhoondho</span>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search topics… e.g. docker, sql, jwt"
-              className="glass flex-1 rounded-2xl px-4 py-3 text-sm text-white placeholder:text-white/35 outline-none focus:border-amber-300/50"
+              placeholder="Dhoondho… jaise docker, sql, jwt"
+              className="w-full bg-transparent text-[15px] outline-none placeholder:text-[var(--color-inksoft)]/70"
             />
-            <label className="glass flex cursor-pointer items-center gap-2 rounded-2xl px-4 py-3 text-sm text-white/70">
-              <input
-                type="checkbox"
-                checked={hideDone}
-                onChange={(e) => setHideDone(e.target.checked)}
-                className="h-4 w-4 accent-amber-400"
-              />
-              Hide completed
-            </label>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap">
+            <input
+              type="checkbox"
+              checked={hideDone}
+              onChange={(e) => setHideDone(e.target.checked)}
+              className="h-4 w-4 accent-[#b3351f]"
+            />
+            Poore chhupao
+          </label>
+          <button
+            onClick={resetAll}
+            className="text-sm text-[var(--color-inksoft)] underline underline-offset-4 hover:text-[var(--color-seal)] sm:ml-2"
+          >
+            Register reset karo
+          </button>
+        </div>
+        <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Adhyay chuno">
+          {PHASES.map((p) => (
             <button
-              onClick={resetAll}
-              className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-bold text-white/60 hover:bg-white/10 hover:text-white"
+              key={p}
+              onClick={() => setPhaseFilter(p)}
+              aria-pressed={phaseFilter === p}
+              className={`shrink-0 border px-4 py-2 font-ledger text-xs font-bold tracking-[0.1em] uppercase transition ${
+                phaseFilter === p
+                  ? "border-[var(--color-ink)] bg-[var(--color-ink)] text-[var(--color-paper)]"
+                  : "border-[var(--color-ink)]/40 bg-transparent text-[var(--color-ink)] hover:border-[var(--color-ink)]"
+              }`}
             >
-              Reset
+              {p === "All" ? "Sab" : p}
             </button>
-          </div>
-          <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
-            {PHASES.map((p) => (
-              <button
-                key={p}
-                onClick={() => setPhaseFilter(p)}
-                className={`shrink-0 rounded-full border px-4 py-2 text-xs font-black tracking-wide uppercase transition ${
-                  phaseFilter === p
-                    ? "border-amber-300 bg-amber-300 text-black shadow-lg shadow-amber-500/30"
-                    : "border-white/12 bg-white/5 text-white/55 hover:border-white/25 hover:text-white"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-        </section>
+          ))}
+        </div>
+      </div>
 
-        {/* 90-DAY GRID */}
-        <section className="glass mt-6 rounded-3xl p-5 sm:p-6">
-          <h3 className="text-sm font-black tracking-widest text-white/60 uppercase">90-day map • click a day to tick</h3>
-          <div className="mt-4 grid grid-cols-5 gap-2 sm:grid-cols-9 lg:grid-cols-10">
+      {/* Naksha */}
+      <section id="naksha" className="mt-10 scroll-mt-6">
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 className="font-display text-3xl font-black sm:text-4xl">Naksha.</h2>
+          <p className="text-right font-ledger text-[11px] tracking-[0.14em] uppercase text-[var(--color-inksoft)]">
+            Uplabdh register — dabao, mohar lagegi
+          </p>
+        </div>
+        <div className="rule-single mt-3 pt-5">
+          <div className="grid grid-cols-5 gap-2 sm:grid-cols-9 lg:grid-cols-10">
             {enriched.map((t) => (
               <button
                 key={t.day}
                 title={`Day ${t.day}: ${t.title}`}
                 onClick={() => toggle(t.day)}
-                className={`flex aspect-square flex-col items-center justify-center rounded-xl border text-[11px] font-black transition hover:scale-105 ${
+                aria-label={`Day ${t.day} ${t.done ? "poora" : "baaki"}`}
+                aria-pressed={t.done}
+                className={`flex aspect-square flex-col items-center justify-center border font-ledger text-xs font-bold transition hover:-translate-y-0.5 ${
                   t.done
-                    ? "border-emerald-300/60 bg-emerald-300 text-black"
+                    ? "border-[var(--color-leaf)] bg-[var(--color-leaf)] text-[var(--color-paper)]"
                     : t.isOverdue
-                      ? "border-rose-300/50 bg-rose-400/15 text-rose-200"
+                      ? "border-2 border-[var(--color-seal)] bg-transparent text-[var(--color-seal)]"
                       : toISODate(t.date) === toISODate(viewDate)
-                        ? "border-amber-300 bg-amber-300 text-black"
-                        : "border-white/10 bg-white/5 text-white/55 hover:border-amber-300/40"
+                        ? "border-2 border-[var(--color-ink)] bg-[var(--color-ink)] text-[var(--color-paper)]"
+                        : "border-[var(--color-ink)]/25 bg-transparent text-[var(--color-ink)] hover:border-[var(--color-ink)]"
                 }`}
               >
                 {t.done ? "✓" : t.day}
               </button>
             ))}
           </div>
-          <div className="mt-4 flex flex-wrap gap-4 text-[11px] text-white/50">
-            <span>🟩 done</span>
-            <span>🟥 carried over (missed)</span>
-            <span>🟨 viewing date</span>
-            <span>⬜ upcoming</span>
+          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 font-ledger text-[11px] tracking-wide text-[var(--color-inksoft)] uppercase">
+            <span><span className="mr-1 inline-block h-2.5 w-2.5 bg-[var(--color-leaf)] align-middle" /> poora</span>
+            <span><span className="mr-1 inline-block h-2.5 w-2.5 border-2 border-[var(--color-seal)] align-middle" /> udhaar</span>
+            <span><span className="mr-1 inline-block h-2.5 w-2.5 bg-[var(--color-ink)] align-middle" /> dekh rahe ho</span>
+            <span><span className="mr-1 inline-block h-2.5 w-2.5 border border-[var(--color-ink)]/40 align-middle" /> aane wala</span>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* FULL TIMELINE */}
-        {grouped.map(([phase, items]) => (
-          <section key={phase} className="mt-10">
-            <div className="flex items-center gap-3">
-              <span className={`rounded-full border px-3 py-1 text-[11px] font-black tracking-widest uppercase ${PHASE_COLOR[phase]}`}>
-                {phase}
-              </span>
-              <span className="text-xs text-white/40">
-                {items.filter((i) => i.done).length}/{items.length} done
-              </span>
-              <div className="h-px flex-1 bg-white/8" />
-            </div>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              {items.map((t) => (
-                <div
-                  key={t.day}
-                  className={`task-card glass rounded-2xl p-4 ${t.done ? "opacity-60" : ""} ${
-                    t.isOverdue ? "border-rose-300/30" : ""
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <button
-                      onClick={() => toggle(t.day)}
-                      aria-label={`tick day ${t.day}`}
-                      className={`checkbox-tick flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-sm font-black ${
-                        t.done
-                          ? "border-emerald-300 bg-emerald-300 text-black"
-                          : "border-white/25 bg-white/5 text-transparent hover:border-emerald-300"
-                      }`}
-                    >
-                      ✓
-                    </button>
+      {/* Adhyay */}
+      <div id="adhyay" className="scroll-mt-6">
+        {grouped.map(([phase, items]) => {
+          const doneIn = items.filter((i) => i.done).length;
+          const allDone = doneIn === items.length && items.length > 0;
+          return (
+            <section key={phase} className="mt-12">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div className="flex items-baseline gap-4">
+                  <span className="font-display text-5xl font-black text-[var(--color-seal)]" aria-hidden>
+                    {CHAPTER[phase]}
+                  </span>
+                  <div>
+                    <h2 className="font-display text-3xl font-black sm:text-4xl">{phase}</h2>
+                    <p className="mt-1 font-ledger text-xs tracking-[0.14em] uppercase text-[var(--color-inksoft)]">
+                      {doneIn}/{items.length} poore {allDone && "· adhyay samapt"}
+                    </p>
+                  </div>
+                </div>
+                {allDone && <span className="stamp stamp-leaf">Samapt ✓</span>}
+              </div>
+              <ol className="mt-4">
+                {items.map((t) => (
+                  <li key={t.day} className="ledger-row flex items-start gap-3 py-4 sm:gap-4">
+                    <input
+                      type="checkbox"
+                      checked={t.done}
+                      onChange={() => toggle(t.day)}
+                      aria-label={`Day ${t.day} poora hua`}
+                      data-done={t.done}
+                      data-late={t.isOverdue && !t.done}
+                      className="mohar mt-1"
+                    />
                     <div className="min-w-0 flex-1">
-                      <p className="text-[11px] font-bold tracking-wider text-white/40">
-                        DAY {t.day} • {formatDayLabel(t.date)} {formatDate(t.date)} • {t.minutes} min • #{t.tag}
+                      <p className="font-ledger text-[11px] tracking-[0.12em] text-[var(--color-inksoft)] uppercase">
+                        {serial(t.day)} · {formatDayLabel(t.date)} {formatDate(t.date)} · {t.minutes} min · #{t.tag}
                       </p>
-                      <p className={`mt-1 font-bold text-white ${t.done ? "line-through" : ""}`}>{t.title}</p>
-                      <p className="mt-1 text-sm leading-relaxed text-white/55">{t.detail}</p>
+                      <p className={`font-display mt-1 text-xl leading-snug font-bold ${t.done ? "line-through opacity-50" : ""}`}>
+                        {t.title}
+                      </p>
+                      <p className="mt-0.5 max-w-2xl text-sm leading-relaxed text-[var(--color-inksoft)]">
+                        {t.detail}
+                      </p>
                       {t.isOverdue && !t.done && (
-                        <p className="mt-2 inline-block rounded-full bg-rose-400/15 px-2.5 py-1 text-[11px] font-bold text-rose-200">
-                          Not ticked → auto-moved to {formatDate(viewDate)}. Tick to clear.
+                        <p className="mt-2">
+                          <span className="stamp stamp-seal">
+                            Tick nahi hua → {formatDate(viewDate)} ko aa gaya
+                          </span>
                         </p>
                       )}
                     </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        ))}
-
-        <footer className="mt-14 text-center text-xs leading-relaxed text-white/35">
-          <p>Built for Option A • FastAPI + Postgres • Starts 4 Oct 2026 • Ends {formatDate(dateForDay(90))}</p>
-          <p className="mt-1">Tip: open this daily, tick honestly. What you skip today will wait for you tomorrow.</p>
-        </footer>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          );
+        })}
+        {grouped.length === 0 && (
+          <div className="mt-12 border border-dashed border-[var(--color-inksoft)] p-8 text-center">
+            <p className="font-display text-2xl font-black">Kuch nahi mila.</p>
+            <p className="mt-1 text-sm text-[var(--color-inksoft)]">Khoj ya filter badal ke dekho.</p>
+          </div>
+        )}
       </div>
+
+      {/* Colophon */}
+      <footer className="rule-double mt-16 pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 font-ledger text-[11px] tracking-[0.12em] uppercase text-[var(--color-inksoft)]">
+          <span>Option A · FastAPI + Postgres</span>
+          <span>{formatDate(startDate)} → {formatDate(endDate)}</span>
+        </div>
+        <p className="mt-3 text-sm leading-relaxed text-[var(--color-inksoft)]">
+          Roz register kholo, imaandaari se mohar lagao. Jo chhoda, woh kal milega —
+          isiliye aaj ka kaam aaj niptao.
+        </p>
+      </footer>
     </div>
   );
 }
